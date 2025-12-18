@@ -254,13 +254,35 @@
     let visitorOrders = [];
 
     const menuData = [
-        { id: 1, name: "Burger Opulence", price: 24.00, type: "repas", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", stock: 12, desc: "Bœuf Wagyu, truffe noire et cheddar affiné 24 mois.", stockMax: 50 },
-        { id: 2, name: "Pizza Royale Truffe", price: 32.50, type: "repas", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400", stock: 5, desc: "Base crème, truffe fraîche, burrata crémeuse.", stockMax: 30 },
-        { id: 3, name: "Cocktail Gold", price: 18.00, type: "boisson", image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400", stock: 45, desc: "Gin premium, feuille d'or, essence de rose.", stockMax: 100 },
-        { id: 4, name: "Fondant Valrhona", price: 14.00, type: "dessert", image: "https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=400", stock: 10, desc: "Cœur coulant chocolat noir 70%, glace vanille.", stockMax: 40 },
-        { id: 5, name: "Salade Impériale", price: 21.00, type: "repas", image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=400", stock: 18, desc: "Gambas grillées, avocat, sauce yuzu.", stockMax: 40 },
-        { id: 6, name: "Nectar d'Hibiscus", price: 9.00, type: "boisson", image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400", stock: 80, desc: "Infusion de fleurs d'hibiscus, menthe fraîche.", stockMax: 150 }
-    ];
+    // Plats principaux - type: "repas"
+    { id: 1, name: "Malangua", price: 18.00, type: "repas", image: "/asset/1malangua.webp", stock: 25, stockMax: 50, desc: "Plat traditionnel à base de légumes." },
+    { id: 2, name: "Niania", price: 22.00, type: "repas", image: "/asset/2niania.webp", stock: 18, stockMax: 40, desc: "Plat savoureux de viande mijotée." },
+    { id: 3, name: "Riz Local", price: 15.00, type: "repas", image: "/asset/3riz.webp", stock: 35, stockMax: 60, desc: "Riz accompagné de sauce traditionnelle." },
+    { id: 4, name: "Porc Grillé", price: 20.00, type: "repas", image: "/asset/4porc.webp", stock: 22, stockMax: 45, desc: "Porc grillé aux épices locales." },
+    { id: 5, name: "Poulet Mayonnaise", price: 19.00, type: "repas", image: "/asset/5poulet-mayo.webp", stock: 30, stockMax: 50, desc: "Poulet frais avec sauce mayonnaise maison." },
+    { id: 6, name: "Chenilles", price: 16.00, type: "repas", image: "/asset/6chenille.webp", stock: 15, stockMax: 35, desc: "Chenilles locales, riches en protéines." },
+    { id: 7, name: "Fumbwa et Poisson", price: 23.00, type: "repas", image: "/asset/7fumbwa-et-poison.webp", stock: 28, stockMax: 50, desc: "Légumes feuilles avec poisson frais." },
+    { id: 8, name: "Chikwangue", price: 14.00, type: "repas", image: "/asset/8chikang.webp", stock: 40, stockMax: 70, desc: "Pain de manioc traditionnel." },
+    { id: 9, name: "Champignons Sautés", price: 17.00, type: "repas", image: "/asset/9champignon.webp", stock: 32, stockMax: 55, desc: "Champignons frais sautés aux herbes." },
+    { id: 10, name: "Poulet Grillé", price: 24.00, type: "repas", image: "/asset/10poulet.webp", stock: 20, stockMax: 40, desc: "Poulet entier grillé aux épices." },
+    { id: 11, name: "Mabumu à la Pâte d'Arachide", price: 21.00, type: "repas", image: "/asset/11mabumu-a-la-p...-darachide.webp", stock: 17, stockMax: 35, desc: "Abats dans une sauce crémeuse à l'arachide." },
+    { id: 12, name: "Mabumu Traditionnel", price: 19.00, type: "repas", image: "/asset/12mabumu.webp", stock: 26, stockMax: 50, desc: "Abats cuisinés à la manière traditionnelle." },
+    { id: 13, name: "Tilapia et Légumes", price: 25.00, type: "repas", image: "/asset/13tilapia-et-legume.webp", stock: 12, stockMax: 30, desc: "Poisson tilapia frais avec légumes de saison." },
+    { id: 14, name: "Makayabu", price: 18.00, type: "repas", image: "/asset/14makayabu.webp", stock: 42, stockMax: 75, desc: "Poisson séché préparé à la façon locale." },
+    { id: 15, name: "Mpose", price: 22.00, type: "repas", image: "/asset/15mpose.webp", stock: 16, stockMax: 35, desc: "Plat de banane plantain avec accompagnement." },
+    { id: 16, name: "Lengalenga", price: 16.00, type: "repas", image: "/asset/16lengalenga.webp", stock: 38, stockMax: 65, desc: "Feuilles de manioc préparées traditionnellement." },
+    { id: 17, name: "Liboké de Poisson", price: 27.00, type: "repas", image: "/asset/17liboke.webp", stock: 14, stockMax: 30, desc: "Poisson cuit dans des feuilles de bananier." },
+    
+    // Boissons - type: "boisson"
+    { id: 18, name: "Primus", price: 5.00, type: "boisson", image: "https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=150&q=80", stock: 120, stockMax: 200, desc: "Bière Locale Congolaise" },
+    { id: 19, name: "Tembo", price: 6.00, type: "boisson", image: "https://images.unsplash.com/photo-1535958636474-b021ee8876a3?auto=format&fit=crop&w=150&q=80", stock: 95, stockMax: 180, desc: "Bière Brune Africaine" },
+    { id: 20, name: "Skol", price: 5.00, type: "boisson", image: "https://images.unsplash.com/photo-1586993451228-097180589669?auto=format&fit=crop&w=150&q=80", stock: 150, stockMax: 250, desc: "Bière Légère Internationale" },
+    { id: 21, name: "Castel", price: 6.00, type: "boisson", image: "https://images.unsplash.com/photo-1571613316887-6f8d5cbf7ef7?auto=format&fit=crop&w=150&q=80", stock: 85, stockMax: 160, desc: "Bière Premium" },
+    { id: 22, name: "Vin de Palme", price: 8.00, type: "boisson", image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=150&q=80", stock: 65, stockMax: 120, desc: "Malafu / Nsamba - Vin traditionnel" },
+    { id: 23, name: "Whisky de Canne", price: 10.00, type: "boisson", image: "https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=150&q=80", stock: 45, stockMax: 100, desc: "Lotoko / Kasiksi - Liqueur forte locale" },
+    { id: 24, name: "Jus de Bissap", price: 4.00, type: "boisson", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=150&q=80", stock: 200, stockMax: 300, desc: "Fleur d'hibiscus, frais et naturellement sucré" },
+    { id: 25, name: "Tangawisi", price: 4.00, type: "boisson", image: "https://images.unsplash.com/photo-1598282362354-949cb37e69be?auto=format&fit=crop&w=150&q=80", stock: 180, stockMax: 280, desc: "Jus de Gingembre rafraîchissant et piquant" }
+];
 
     let orders = [
         { id: "#OP-8821", customer: "Ibrahim Sall", items: "Burger Opulence x2", total: 48.00, status: "en cours", time: "14:15" },
