@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opulence | Gestion Restaurant Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0F0F11;
+            color: #E4E4E7;
+            overflow-x: hidden;
+        }
+        .glass {
+            background: rgba(26, 26, 29, 0.85);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(90deg, rgba(225, 29, 72, 0.15) 0%, transparent 100%);
+            border-left: 4px solid #E11D48;
+            color: white;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #27272A;
+            border-radius: 10px;
+        }
+        .product-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(225, 29, 72, 0.3);
+        }
+        .inventory-bar {
+            height: 6px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        .inventory-bar.low {
+            background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+        }
+        .inventory-bar.medium {
+            background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+        }
+        .inventory-bar.high {
+            background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+        }
+        .popup-overlay {
+            animation: fadeIn 0.2s ease-out;
+        }
+        .popup-container {
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @media (max-width: 1024px) {
+            .mobile-sidebar-hidden { transform: translateX(-100%); }
+            .mobile-sidebar-show { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="custom-scrollbar">
+
+<div id="app">
+    <!-- MODAL POPUP -->
+    <div id="popup-modal" class="fixed inset-0 z-[9999] hidden items-center justify-center popup-overlay">
+        <div class="absolute inset-0 bg-black/70" onclick="hidePopup()"></div>
+        <div class="relative glass rounded-[2.5rem] p-8 max-w-md w-full mx-4 popup-container">
+            <div class="text-center mb-6">
+                <div id="popup-icon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <!-- Icon will be set dynamically -->
+                </div>
+                <h3 id="popup-title" class="text-2xl font-bold text-white mb-2"></h3>
+                <p id="popup-message" class="text-zinc-400"></p>
+            </div>
+            <div class="flex space-x-4">
+                <button onclick="hidePopup()" id="popup-cancel" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-3 rounded-2xl transition-all">Annuler</button>
+                <button onclick="popupConfirmAction()" id="popup-confirm" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-2xl transition-all">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed top-6 right-6 z-[9998] glass p-4 rounded-2xl shadow-2xl transform translate-x-full transition-transform duration-300">
+        <div class="flex items-center">
+            <div id="toast-icon" class="w-10 h-10 rounded-full flex items-center justify-center mr-3">
+                <!-- Icon set dynamically -->
+            </div>
+            <div>
+                <p id="toast-title" class="font-bold text-white text-sm"></p>
+                <p id="toast-message" class="text-zinc-400 text-xs"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ECRAN DE CONNEXION -->
+    <div id="login-screen" class="min-h-screen w-full flex items-center justify-center relative transition-opacity duration-500">
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1920&q=80" class="w-full h-full object-cover opacity-20" alt="Restaurant Background">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/80 to-[#0F0F11]"></div>
+        </div>
+        
+        <div class="relative z-10 w-full max-w-md p-8 glass rounded-[2.5rem] shadow-2xl mx-4">
+            <div class="text-center mb-10">
+                <div class="w-20 h-20 bg-rose-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-rose-600/40">
+                    <span class="text-4xl font-bold italic text-white">O</span>
+                </div>
+                <h1 class="text-4xl font-extrabold tracking-tight text-white">Opulence</h1>
+                <p class="text-zinc-500 mt-2 font-medium">Gestion & Commande de Luxe</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-zinc-400 mb-2">Identifiant</label>
+                    <input type="text" id="username" class="w-full bg-zinc-900/80 border border-zinc-800 rounded-2xl py-4 px-5 focus:outline-none focus:border-rose-600 text-white transition-all placeholder-zinc-700" placeholder="admin ou laisser vide">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-zinc-400 mb-2">Mot de passe</label>
+                    <input type="password" id="password" class="w-full bg-zinc-900/80 border border-zinc-800 rounded-2xl py-4 px-5 focus:outline-none focus:border-rose-600 text-white transition-all placeholder-zinc-700" placeholder="1234 ou laisser vide">
+                </div>
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-rose-600/20 transform transition active:scale-95">
+                    Entrer dans l'établissement
+                </button>
+            </form>
+            <div class="mt-8 text-center">
+                <p class="text-zinc-500 text-xs font-medium uppercase tracking-widest">Accès rapide</p>
+                <div class="flex justify-center gap-4 mt-3">
+                    <button onclick="quickFill('admin')" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-full text-zinc-400">Mode Admin</button>
+                    <button onclick="quickFill('')" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded-full text-zinc-400">Mode Visiteur</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTERFACE PRINCIPALE -->
+    <div id="main-layout" class="hidden h-screen flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Sidebar Mobile Overlay -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 lg:hidden hidden"></div>
+
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed lg:relative inset-y-0 left-0 w-72 glass border-r border-zinc-800 flex flex-col z-50 transition-transform duration-300 mobile-sidebar-hidden lg:translate-x-0">
+            <div class="p-8 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center font-bold italic text-white">O</div>
+                    <span class="text-xl font-bold tracking-tighter text-white">OPULENCE</span>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-zinc-400 hover:text-white">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <nav id="nav-menu" class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto custom-scrollbar">
+                <!-- Dynamique via JS -->
+            </nav>
+
+            <div class="p-6 border-t border-zinc-800">
+                <div class="flex items-center justify-between group cursor-pointer" onclick="logout()">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-600/10 flex items-center justify-center text-rose-500 group-hover:bg-rose-600 group-hover:text-white transition-all">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        </div>
+                        <span class="font-bold text-sm text-zinc-400 group-hover:text-white">Déconnexion</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-20 flex items-center justify-between px-6 lg:px-10 bg-[#0F0F11]/90 backdrop-blur-md border-b border-zinc-900 shrink-0 z-30">
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 bg-zinc-900 rounded-xl text-zinc-400">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <h2 id="page-title" class="text-xl lg:text-2xl font-bold text-white">Menu</h2>
+                </div>
+                
+                <div class="flex items-center space-x-4 lg:space-x-8">
+                    <div class="hidden sm:block relative">
+                        <input type="text" onkeyup="searchItems(this.value)" placeholder="Rechercher..." class="bg-zinc-900/50 border border-zinc-800 rounded-2xl py-2 px-10 text-sm focus:outline-none focus:border-rose-600 w-48 lg:w-64 transition-all">
+                        <svg class="absolute left-3 top-2.5 text-zinc-600" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <div class="hidden md:block text-right leading-none">
+                            <p id="user-display-name" class="text-sm font-bold text-white">Visiteur</p>
+                            <span id="user-role-label" class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Client</span>
+                        </div>
+                        <div class="w-11 h-11 rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden shadow-inner">
+                            <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar">
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Content -->
+            <div id="content-display" class="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar relative bg-[#0F0F11]">
+                <!-- Contenu via JS -->
+            </div>
+        </main>
+
+        <!-- Right Panel (Cart or Stats) -->
+        <aside id="right-panel" class="hidden xl:flex w-80 glass border-l border-zinc-800 p-8 flex flex-col shrink-0">
+            <!-- Contenu via JS -->
+        </aside>
+
+        <!-- Mobile Cart FAB (Only for visitor) -->
+        <button id="mobile-cart-btn" onclick="toggleMobileCart()" class="fixed bottom-6 right-6 w-16 h-16 bg-rose-600 rounded-full shadow-2xl shadow-rose-600/40 flex items-center justify-center z-40 lg:hidden hidden text-white">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span id="cart-count-badge" class="absolute -top-1 -right-1 bg-white text-rose-600 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-rose-600">0</span>
+        </button>
+    </div>
+
+    <!-- Mobile Cart Drawer -->
+    <div id="mobile-cart-drawer" class="fixed inset-0 z-[100] translate-x-full transition-transform duration-300 lg:hidden">
+        <div class="absolute inset-0 bg-black/60" onclick="toggleMobileCart()"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm glass flex flex-col p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-xl font-bold text-white">Votre Panier</h3>
+                <button onclick="toggleMobileCart()" class="text-zinc-500"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+            </div>
+            <div id="mobile-cart-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-4"></div>
+            <div id="mobile-cart-footer" class="pt-6 border-t border-zinc-800 mt-4"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- STATE ---
+    let currentUser = null;
+    let currentTab = 'home';
+    let cart = [];
+    let currentCategory = 'all';
+    let searchQuery = '';
+    let popupCallback = null;
+    let popupData = null;
+    let visitorOrders = [];
+
+    const menuData = [
+        { id: 1, name: "Burger Opulence", price: 24.00, type: "repas", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400", stock: 12, desc: "Bœuf Wagyu, truffe noire et cheddar affiné 24 mois.", stockMax: 50 },
+        { id: 2, name: "Pizza Royale Truffe", price: 32.50, type: "repas", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400", stock: 5, desc: "Base crème, truffe fraîche, burrata crémeuse.", stockMax: 30 },
+        { id: 3, name: "Cocktail Gold", price: 18.00, type: "boisson", image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400", stock: 45, desc: "Gin premium, feuille d'or, essence de rose.", stockMax: 100 },
+        { id: 4, name: "Fondant Valrhona", price: 14.00, type: "dessert", image: "https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=400", stock: 10, desc: "Cœur coulant chocolat noir 70%, glace vanille.", stockMax: 40 },
+        { id: 5, name: "Salade Impériale", price: 21.00, type: "repas", image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=400", stock: 18, desc: "Gambas grillées, avocat, sauce yuzu.", stockMax: 40 },
+        { id: 6, name: "Nectar d'Hibiscus", price: 9.00, type: "boisson", image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=400", stock: 80, desc: "Infusion de fleurs d'hibiscus, menthe fraîche.", stockMax: 150 }
+    ];
+
+    let orders = [
+        { id: "#OP-8821", customer: "Ibrahim Sall", items: "Burger Opulence x2", total: 48.00, status: "en cours", time: "14:15" },
+        { id: "#OP-8820", customer: "Amine K.", items: "Salade Impériale x1", total: 21.00, status: "terminé", time: "13:30" }
+    ];
+
+    // --- POPUP MODAL SYSTEM ---
+    function showPopup(title, message, type = 'info', confirmText = 'Confirmer', cancelText = 'Annuler', onConfirm = null, data = null) {
+        const modal = document.getElementById('popup-modal');
+        const icon = document.getElementById('popup-icon');
+        const titleEl = document.getElementById('popup-title');
+        const messageEl = document.getElementById('popup-message');
+        const confirmBtn = document.getElementById('popup-confirm');
+        const cancelBtn = document.getElementById('popup-cancel');
+        
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        confirmBtn.innerText = confirmText;
+        cancelBtn.innerText = cancelText;
+        popupCallback = onConfirm;
+        popupData = data;
+        
+        // Set icon based on type
+        icon.innerHTML = '';
+        let iconColor = '';
+        
+        switch(type) {
+            case 'success':
+                iconColor = 'bg-emerald-500/20 text-emerald-500';
+                icon.innerHTML = '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+                break;
+            case 'warning':
+                iconColor = 'bg-amber-500/20 text-amber-500';
+                icon.innerHTML = '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+                break;
+            case 'error':
+                iconColor = 'bg-rose-500/20 text-rose-500';
+                icon.innerHTML = '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+                break;
+            case 'info':
+            default:
+                iconColor = 'bg-blue-500/20 text-blue-500';
+                icon.innerHTML = '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+        }
+        
+        icon.className = `w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${iconColor}`;
+        modal.classList.remove('hidden');
+    }
+
+    function hidePopup() {
+        document.getElementById('popup-modal').classList.add('hidden');
+        popupCallback = null;
+        popupData = null;
+    }
+
+    function popupConfirmAction() {
+        if (popupCallback) popupCallback(popupData);
+        hidePopup();
+    }
+
+    // --- TOAST NOTIFICATION SYSTEM ---
+    function showToast(title, message, type = 'info') {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toast-icon');
+        const titleEl = document.getElementById('toast-title');
+        const messageEl = document.getElementById('toast-message');
+        
+        titleEl.innerText = title;
+        messageEl.innerText = message;
+        
+        // Set icon based on type
+        icon.innerHTML = '';
+        let iconColor = '';
+        
+        switch(type) {
+            case 'success':
+                iconColor = 'bg-emerald-500/20 text-emerald-500';
+                icon.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+                break;
+            case 'error':
+                iconColor = 'bg-rose-500/20 text-rose-500';
+                icon.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+                break;
+            default:
+                iconColor = 'bg-blue-500/20 text-blue-500';
+                icon.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+        }
+        
+        icon.className = `w-10 h-10 rounded-full flex items-center justify-center mr-3 ${iconColor}`;
+        
+        toast.classList.remove('translate-x-full');
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+        }, 3000);
+    }
+
+    // --- CORE FUNCTIONS ---
+
+    function quickFill(role) {
+        document.getElementById('username').value = role;
+        document.getElementById('password').value = role === 'admin' ? '1234' : '';
+    }
+
+    function handleLogin(e) {
+        e.preventDefault();
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+
+        if (u === 'admin' && p === '1234') {
+            currentUser = 'admin';
+        } else if (u === '' && p === '') {
+            currentUser = 'visitor';
+        } else {
+            showToast('Accès refusé', 'Utilisez admin/1234 ou laissez vide', 'error');
+            return;
+        }
+
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-layout').classList.remove('hidden');
+        initApp();
+        showToast('Connexion réussie', `Bienvenue en mode ${currentUser === 'admin' ? 'Administrateur' : 'Visiteur'}`, 'success');
+    }
+
+    function logout() {
+        showPopup('Déconnexion', 'Voulez-vous vraiment quitter l\'établissement ?', 'warning', 'Quitter', 'Rester', () => {
+            currentUser = null;
+            cart = [];
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('main-layout').classList.add('hidden');
+            showToast('Déconnexion', 'Vous avez quitté l\'établissement', 'info');
+        });
+    }
+
+    function initApp() {
+        const nav = document.getElementById('nav-menu');
+        const userLabel = document.getElementById('user-role-label');
+        const userName = document.getElementById('user-display-name');
+        const userAvatar = document.getElementById('user-avatar');
+        const mobileBtn = document.getElementById('mobile-cart-btn');
+
+        if (currentUser === 'admin') {
+            userName.innerText = "Directeur Opulence";
+            userLabel.innerText = "Administrateur";
+            userAvatar.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin";
+            mobileBtn.classList.add('hidden');
+            nav.innerHTML = `
+                <div onclick="navigate('admin-dash')" class="nav-btn sidebar-item flex items-center space-x-3 px-4 py-3 rounded-2xl cursor-pointer text-zinc-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span class="font-bold text-sm">Tableau de Bord</span>
+                </div>
+                <div onclick="navigate('admin-inv')" class="nav-btn sidebar-item flex items-center space-x-3 px-4 py-3 rounded-2xl cursor-pointer text-zinc-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V21H3V8"/><path d="M1 3H23V8H1V3Z"/><path d="M10 12H14"/></svg>
+                    <span class="font-bold text-sm">Inventaire</span>
+                </div>
+                <div onclick="navigate('admin-orders')" class="nav-btn sidebar-item flex items-center space-x-3 px-4 py-3 rounded-2xl cursor-pointer text-zinc-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    <span class="font-bold text-sm">Commandes</span>
+                </div>
+                <div onclick="navigate('admin-finance')" class="nav-btn sidebar-item flex items-center space-x-3 px-4 py-3 rounded-2xl cursor-pointer text-zinc-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <span class="font-bold text-sm">Comptabilité</span>
+                </div>
+                <div onclick="navigate('admin-menu')" class="nav-btn sidebar-item flex items-center space-x-3 px-4 py-3 rounded-2xl cursor-pointer text-zinc-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                    <span class="font-bold text-sm">Editer Menu</span>
+                </div>
+            `;
+            navigate('admin-dash');
+        } else {
+            userName.innerText = "Client Privilège";
+            userLabel.innerText = "Visiteur";
+            userAvatar.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix";
+            mobileBtn.classList.remove('hidden');
+            nav.innerHTML = `
+                <div onclick="navigate('visitor-home')" class="nav-btn sidebar-item flex items-center space-x-3 px-4 py-3 rounded-2xl cursor-pointer text-zinc-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span class="font-bold text-sm">La Carte</span>
+                </div>
+                <div onclick="navigate('visitor-orders')" class="nav-btn sidebar-item flex items-center space-x-3 px-4 py-3 rounded-2xl cursor-pointer text-zinc-400">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span class="font-bold text-sm">Mes Commandes</span>
+                </div>
+            `;
+            navigate('visitor-home');
+        }
+        renderRightPanel();
+    }
+
+    function navigate(tab) {
+        currentTab = tab;
+        const display = document.getElementById('content-display');
+        const title = document.getElementById('page-title');
+        
+        // Update Nav UI
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // Find and activate the current tab
+        const navButtons = document.querySelectorAll('.nav-btn');
+        navButtons.forEach((btn, index) => {
+            if (currentUser === 'admin') {
+                const adminTabs = ['admin-dash', 'admin-inv', 'admin-orders', 'admin-finance', 'admin-menu'];
+                if (adminTabs[index] === tab) {
+                    btn.classList.add('active');
+                }
+            } else {
+                const visitorTabs = ['visitor-home', 'visitor-orders'];
+                if (visitorTabs[index] === tab) {
+                    btn.classList.add('active');
+                }
+            }
+        });
+
+        if(window.innerWidth < 1024) toggleSidebar(false);
+
+        switch(tab) {
+            case 'admin-dash': 
+                title.innerText = "Tableau de Bord";
+                renderAdminDash(display); break;
+            case 'admin-inv': 
+                title.innerText = "Inventaire";
+                renderAdminInv(display); break;
+            case 'admin-orders': 
+                title.innerText = "Suivi Commandes";
+                renderAdminOrders(display); break;
+            case 'admin-finance': 
+                title.innerText = "Comptabilité";
+                renderAdminFinance(display); break;
+            case 'admin-menu': 
+                title.innerText = "Editer Menu";
+                renderAdminMenuEdit(display); break;
+            case 'visitor-home': 
+                title.innerText = "Menu Gastronomique";
+                renderVisitorHome(display); break;
+            case 'visitor-orders': 
+                title.innerText = "Mes Commandes";
+                renderVisitorOrders(display); break;
+        }
+    }
+
+    // --- RENDERERS ---
+
+    function renderVisitorHome(container) {
+        container.innerHTML = `
+            <div class="flex space-x-3 mb-10 overflow-x-auto pb-4 custom-scrollbar no-scrollbar">
+                ${['all', 'repas', 'boisson', 'dessert'].map(cat => `
+                    <button onclick="setCategory('${cat}')" class="px-6 py-3 rounded-2xl font-bold transition-all whitespace-nowrap ${currentCategory === cat ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30' : 'bg-zinc-900 text-zinc-500 hover:text-white'}">
+                        ${cat === 'all' ? 'Tout' : cat.charAt(0).toUpperCase() + cat.slice(1) + 's'}
+                    </button>
+                `).join('')}
+            </div>
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                <!-- Products -->
+            </div>
+        `;
+        updateProductGrid();
+    }
+
+    function renderVisitorOrders(container) {
+        if (visitorOrders.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-20">
+                    <div class="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-700">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Aucune commande</h3>
+                    <p class="text-zinc-500 max-w-md mx-auto">Vous n'avez pas encore passé de commande. Parcourez notre carte gastronomique pour découvrir nos spécialités.</p>
+                    <button onclick="navigate('visitor-home')" class="mt-8 bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 py-4 rounded-2xl transition-all">
+                        Voir la carte
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="lg:col-span-2">
+                    <h3 class="text-lg font-bold text-white mb-6 flex items-center">
+                        <span class="w-3 h-3 bg-rose-500 rounded-full mr-3"></span>
+                        Historique de vos commandes
+                    </h3>
+                </div>
+                
+                ${visitorOrders.map(order => {
+                    const statusColor = order.status === 'en cours' ? 'bg-rose-500/10 text-rose-500' : 
+                                      order.status === 'terminé' ? 'bg-emerald-500/10 text-emerald-500' : 
+                                      'bg-blue-500/10 text-blue-500';
+                    
+                    return `
+                        <div class="glass p-8 rounded-[2.5rem] border-l-4 border-rose-500">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                                <div>
+                                    <span class="text-[10px] font-black text-zinc-600 bg-zinc-900 px-3 py-1 rounded-full uppercase mb-2 block">${order.id} • ${order.time}</span>
+                                    <h4 class="text-xl font-black text-white mb-2">Commande ${order.id}</h4>
+                                    <span class="${statusColor} text-[10px] font-black px-3 py-1 rounded-full uppercase">
+                                        ${order.status}
+                                    </span>
+                                </div>
+                                <span class="text-2xl font-black text-rose-500 mt-4 sm:mt-0">$${order.total.toFixed(2)}</span>
+                            </div>
+                            <div class="bg-zinc-900/50 rounded-2xl p-6 mb-6">
+                                <p class="text-zinc-400 text-sm mb-2 font-semibold">Contenu de la commande:</p>
+                                <p class="text-white">${order.items}</p>
+                            </div>
+                            <div class="flex space-x-4">
+                                <button onclick="reorder('${order.items.replace(/'/g, "\\'")}')" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-3 rounded-2xl transition-all">
+                                    Commander à nouveau
+                                </button>
+                                <button onclick="showOrderDetails('${order.id}')" class="flex-1 bg-rose-600/20 hover:bg-rose-600/30 text-rose-500 font-bold py-3 rounded-2xl transition-all">
+                                    Détails
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    function updateProductGrid() {
+        const grid = document.getElementById('product-grid');
+        if(!grid) return;
+
+        const filtered = menuData.filter(p => {
+            const matchCat = currentCategory === 'all' || p.type === currentCategory;
+            const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchCat && matchSearch;
+        });
+
+        grid.innerHTML = filtered.map(p => {
+            // Calculate stock percentage for visual indicator
+            const stockPercentage = (p.stock / p.stockMax) * 100;
+            let stockColor = 'high';
+            if (stockPercentage < 20) stockColor = 'low';
+            else if (stockPercentage < 50) stockColor = 'medium';
+            
+            return `
+                <div class="product-card glass p-5 rounded-[2.5rem] flex flex-col relative group">
+                    <div class="h-48 w-full rounded-3xl overflow-hidden mb-5 relative bg-zinc-800">
+                        <img src="${p.image}" class="w-full h-full object-cover" alt="${p.name}">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute bottom-4 left-4">
+                            <span class="bg-rose-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-widest">${p.type}</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-white group-hover:text-rose-500 transition-colors">${p.name}</h3>
+                            <span class="text-rose-500 font-black text-lg">$${p.price.toFixed(2)}</span>
+                        </div>
+                        <p class="text-zinc-500 text-xs leading-relaxed mb-4 line-clamp-2">${p.desc}</p>
+                        
+                        <!-- Stock indicator -->
+                        <div class="mb-6">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] font-bold text-zinc-500 uppercase">Stock</span>
+                                <span class="text-[10px] font-bold ${stockColor === 'low' ? 'text-rose-500' : stockColor === 'medium' ? 'text-amber-500' : 'text-emerald-500'}">
+                                    ${p.stock} unités
+                                </span>
+                            </div>
+                            <div class="w-full bg-zinc-800 rounded-full h-2">
+                                <div class="inventory-bar ${stockColor} h-2 rounded-full" style="width: ${stockPercentage}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="addToCart(${p.id})" class="w-full bg-zinc-900 hover:bg-rose-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center transition-all group-hover:shadow-lg group-hover:shadow-rose-600/20 ${p.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${p.stock === 0 ? 'disabled' : ''}>
+                        ${p.stock === 0 ? 'Rupture de stock' : `
+                            <svg class="mr-2" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Ajouter
+                        `}
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderAdminDash(container) {
+        const activeOrders = orders.filter(o => o.status === 'en cours').length;
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        
+        container.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+                <div class="glass p-8 rounded-[2.5rem] border-l-4 border-rose-500 shadow-xl">
+                    <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Chiffre d'Affaire</p>
+                    <h3 class="text-3xl font-black text-white">$${totalRevenue.toFixed(2)}</h3>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem] border-l-4 border-emerald-500 shadow-xl">
+                    <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Commandes Actives</p>
+                    <h3 class="text-3xl font-black text-white">${activeOrders}</h3>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem] border-l-4 border-blue-500 shadow-xl">
+                    <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Produits en Stock</p>
+                    <h3 class="text-3xl font-black text-white">${menuData.length}</h3>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem] border-l-4 border-amber-500 shadow-xl">
+                    <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Commandes Total</p>
+                    <h3 class="text-3xl font-black text-white">${orders.length}</h3>
+                </div>
+            </div>
+
+            <div class="glass rounded-[2.5rem] overflow-hidden border border-zinc-800 shadow-2xl mb-10">
+                <div class="px-8 py-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/30">
+                    <h3 class="font-bold text-white uppercase tracking-widest text-xs">Commandes Récentes</h3>
+                    <button onclick="generateReport()" class="text-rose-500 font-bold text-xs uppercase hover:underline">Générer Rapport</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-zinc-500 border-b border-zinc-800">
+                            <tr>
+                                <th class="px-8 py-4 font-bold uppercase text-[10px]">ID Commande</th>
+                                <th class="px-8 py-4 font-bold uppercase text-[10px]">Client</th>
+                                <th class="px-8 py-4 font-bold uppercase text-[10px]">Montant</th>
+                                <th class="px-8 py-4 font-bold uppercase text-[10px]">Statut</th>
+                                <th class="px-8 py-4 font-bold uppercase text-[10px]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-900">
+                            ${orders.map(order => {
+                                const statusColor = order.status === 'en cours' ? 'bg-rose-500/10 text-rose-500' : 
+                                                  order.status === 'terminé' ? 'bg-emerald-500/10 text-emerald-500' : 
+                                                  'bg-blue-500/10 text-blue-500';
+                                return `
+                                    <tr>
+                                        <td class="px-8 py-6 font-bold text-white">${order.id}</td>
+                                        <td class="px-8 py-6 font-bold text-white">${order.customer}</td>
+                                        <td class="px-8 py-6 font-black text-rose-500">$${order.total.toFixed(2)}</td>
+                                        <td class="px-8 py-6"><span class="${statusColor} text-[10px] font-black px-3 py-1 rounded-full uppercase">${order.status}</span></td>
+                                        <td class="px-8 py-6">
+                                            ${order.status === 'en cours' ? `
+                                                <button onclick="finishOrder('${order.id}')" class="text-emerald-500 hover:text-emerald-400 font-bold text-xs uppercase">Terminer</button>
+                                            ` : ''}
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAdminInv(container) {
+        container.innerHTML = `
+            <div class="glass rounded-[2.5rem] overflow-hidden border border-zinc-800 shadow-2xl">
+                <div class="px-8 py-6 border-b border-zinc-800 bg-gradient-to-r from-zinc-900/50 to-transparent">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-1">Inventaire des produits</h3>
+                            <p class="text-zinc-500 text-sm">Gestion du stock en temps réel</p>
+                        </div>
+                        <button onclick="showRestockAllPopup()" class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-2xl font-bold text-sm flex items-center">
+                            <svg class="mr-2" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            Réapprovisionner tout
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-zinc-900/30 text-zinc-500 text-[10px] font-black uppercase border-b border-zinc-800">
+                            <tr>
+                                <th class="px-8 py-5">Produit</th>
+                                <th class="px-8 py-5 text-center">Stock</th>
+                                <th class="px-8 py-5">Niveau</th>
+                                <th class="px-8 py-5">Statut</th>
+                                <th class="px-8 py-5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-900">
+                            ${menuData.map(item => {
+                                const stockPercentage = (item.stock / item.stockMax) * 100;
+                                let level = "Critique";
+                                let levelColor = "text-rose-500";
+                                let barColor = "low";
+                                let bgColor = "bg-rose-500/10";
+                                
+                                if (stockPercentage >= 50) {
+                                    level = "Élevé";
+                                    levelColor = "text-emerald-500";
+                                    barColor = "high";
+                                    bgColor = "bg-emerald-500/10";
+                                } else if (stockPercentage >= 20) {
+                                    level = "Moyen";
+                                    levelColor = "text-amber-500";
+                                    barColor = "medium";
+                                    bgColor = "bg-amber-500/10";
+                                }
+                                
+                                return `
+                                    <tr class="hover:bg-zinc-900/20 transition-colors">
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center space-x-4">
+                                                <img src="${item.image}" class="w-14 h-14 rounded-2xl object-cover shadow-lg">
+                                                <div>
+                                                    <span class="font-bold text-white block">${item.name}</span>
+                                                    <span class="text-zinc-500 text-xs">${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6 text-center">
+                                            <div class="inline-flex flex-col items-center">
+                                                <span class="font-black text-xl ${levelColor}">${item.stock}</span>
+                                                <span class="text-[10px] text-zinc-600">/ ${item.stockMax}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <div class="flex items-center">
+                                                <div class="flex-1 mr-4">
+                                                    <div class="flex justify-between text-[10px] font-bold text-zinc-500 mb-1">
+                                                        <span>0</span>
+                                                        <span>100%</span>
+                                                    </div>
+                                                    <div class="w-full bg-zinc-800 rounded-full h-2">
+                                                        <div class="inventory-bar ${barColor} h-2 rounded-full" style="width: ${stockPercentage}%"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-8 py-6">
+                                            <span class="${bgColor} ${levelColor} text-[10px] font-black px-3 py-1.5 rounded-full uppercase">
+                                                ${level}
+                                            </span>
+                                        </td>
+                                        <td class="px-8 py-6 text-right">
+                                            <div class="flex justify-end space-x-2">
+                                                <button onclick="restock(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-xl transition-all" title="Réapprovisionner">
+                                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                                                </button>
+                                                <button onclick="editMenuItem(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-blue-600 text-blue-500 hover:text-white rounded-xl transition-all" title="Modifier">
+                                                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="px-8 py-6 border-t border-zinc-800 bg-gradient-to-r from-transparent to-zinc-900/30">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center space-x-6">
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-emerald-500 mr-2"></div>
+                                <span class="text-xs text-zinc-500">Élevé (>50%)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
+                                <span class="text-xs text-zinc-500">Moyen (20-50%)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-rose-500 mr-2"></div>
+                                <span class="text-xs text-zinc-500">Critique (<20%)</span>
+                            </div>
+                        </div>
+                        <div class="text-sm text-zinc-500">
+                            <span class="font-bold text-white">${menuData.length}</span> produits en stock
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAdminOrders(container) {
+        const activeOrders = orders.filter(o => o.status === 'en cours');
+        const completedOrders = orders.filter(o => o.status === 'terminé');
+        
+        container.innerHTML = `
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                <div class="space-y-6">
+                    <h3 class="flex items-center text-rose-500 font-black uppercase tracking-[0.2em] text-xs px-2">
+                        <span class="w-3 h-3 bg-rose-500 rounded-full mr-3 animate-pulse shadow-[0_0_10px_rgba(225,29,72,0.8)]"></span>
+                        Cuisines - En Cours (${activeOrders.length})
+                    </h3>
+                    ${activeOrders.length === 0 ? `
+                        <div class="glass p-10 rounded-[2.5rem] text-center">
+                            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-700 mx-auto mb-4">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                            </svg>
+                            <p class="text-zinc-500">Aucune commande en cours</p>
+                        </div>
+                    ` : activeOrders.map(o => `
+                        <div class="glass p-8 rounded-[2.5rem] border-l-4 border-rose-500 shadow-2xl relative overflow-hidden group">
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div>
+                                    <span class="text-[10px] font-black text-zinc-600 bg-zinc-900 px-3 py-1 rounded-full uppercase mb-2 block">${o.id} • ${o.time}</span>
+                                    <h4 class="text-xl font-black text-white">${o.customer}</h4>
+                                </div>
+                                <span class="text-2xl font-black text-rose-500">$${o.total.toFixed(2)}</span>
+                            </div>
+                            <p class="text-zinc-400 text-sm italic mb-8 relative z-10">${o.items}</p>
+                            <button onclick="finishOrder('${o.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-emerald-900/20 active:scale-95">Finaliser la préparation</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="space-y-6">
+                    <h3 class="flex items-center text-zinc-500 font-black uppercase tracking-[0.2em] text-xs px-2">Historique - Terminé (${completedOrders.length})</h3>
+                    ${completedOrders.length === 0 ? `
+                        <div class="glass p-10 rounded-[2.5rem] text-center opacity-60">
+                            <p class="text-zinc-500">Aucune commande terminée</p>
+                        </div>
+                    ` : `
+                        <div class="opacity-60 space-y-4">
+                            ${completedOrders.map(o => `
+                                <div class="glass p-6 rounded-[2.5rem] border-l-4 border-zinc-700">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-[10px] font-bold text-zinc-600">${o.id}</span>
+                                        <span class="text-zinc-400 font-bold">$${o.total.toFixed(2)}</span>
+                                    </div>
+                                    <h4 class="font-bold text-white">${o.customer}</h4>
+                                    <p class="text-zinc-600 text-xs">${o.items}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAdminFinance(container) {
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        const expenses = totalRevenue * 0.25; // 25% du revenue comme dépenses
+        const profit = totalRevenue - expenses;
+        
+        container.innerHTML = `
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
+                <div class="glass p-10 rounded-[3rem] shadow-2xl bg-gradient-to-br from-zinc-900 to-[#0F0F11]">
+                    <p class="text-zinc-500 font-bold uppercase tracking-widest text-xs mb-4">Balance d'Exploitation</p>
+                    <h3 class="text-6xl font-black text-white mb-8">$${profit.toFixed(2)}</h3>
+                    <div class="flex space-x-6">
+                        <div class="bg-emerald-500/10 p-4 rounded-3xl flex-1">
+                            <p class="text-emerald-500 text-[10px] font-black uppercase">Revenus</p>
+                            <p class="text-xl font-bold text-white">+$${totalRevenue.toFixed(2)}</p>
+                        </div>
+                        <div class="bg-rose-500/10 p-4 rounded-3xl flex-1">
+                            <p class="text-rose-500 text-[10px] font-black uppercase">Dépenses</p>
+                            <p class="text-xl font-bold text-white">-$${expenses.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass p-10 rounded-[3rem] flex flex-col justify-center">
+                    <h4 class="font-black text-zinc-500 uppercase text-xs mb-8 tracking-widest">Répartition des Ventes</h4>
+                    <div class="space-y-6">
+                        ${['Repas', 'Boissons', 'Desserts'].map((cat, i) => {
+                            const percentages = [68, 22, 10];
+                            return `
+                                <div>
+                                    <div class="flex justify-between text-xs font-black uppercase mb-2">
+                                        <span class="text-zinc-400">${cat}</span>
+                                        <span class="text-white">${percentages[i]}%</span>
+                                    </div>
+                                    <div class="h-1.5 bg-zinc-800 rounded-full">
+                                        <div class="h-full bg-rose-600 rounded-full" style="width: ${percentages[i]}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass p-8 rounded-[2.5rem]">
+                <h3 class="text-lg font-bold text-white mb-6">Statistiques Mensuelles</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-zinc-900/50 p-6 rounded-2xl">
+                        <p class="text-zinc-500 text-xs font-bold uppercase mb-2">Commandes</p>
+                        <p class="text-2xl font-black text-white">${orders.length}</p>
+                    </div>
+                    <div class="bg-zinc-900/50 p-6 rounded-2xl">
+                        <p class="text-zinc-500 text-xs font-bold uppercase mb-2">Panier Moyen</p>
+                        <p class="text-2xl font-black text-white">$${orders.length > 0 ? (totalRevenue / orders.length).toFixed(2) : '0.00'}</p>
+                    </div>
+                    <div class="bg-zinc-900/50 p-6 rounded-2xl">
+                        <p class="text-zinc-500 text-xs font-bold uppercase mb-2">Clients Uniques</p>
+                        <p class="text-2xl font-black text-white">${new Set(orders.map(o => o.customer)).size}</p>
+                    </div>
+                    <div class="bg-zinc-900/50 p-6 rounded-2xl">
+                        <p class="text-zinc-500 text-xs font-bold uppercase mb-2">Taux de Rotation</p>
+                        <p class="text-2xl font-black text-white">${menuData.reduce((sum, item) => sum + (item.stockMax - item.stock), 0)}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderAdminMenuEdit(container) {
+        container.innerHTML = `
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-2">Gestion du Menu</h3>
+                    <p class="text-zinc-500 text-sm font-medium italic">Gestion dynamique des actifs culinaires.</p>
+                </div>
+                <button onclick="showCreateProductPopup()" class="bg-rose-600 hover:bg-rose-700 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase shadow-xl shadow-rose-900/30 transition-all flex items-center">
+                    <svg class="mr-2" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nouveau Produit
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+                ${menuData.map(item => `
+                    <div class="glass p-6 rounded-[2.5rem] group relative hover:border-rose-500/30 border border-transparent transition-all">
+                        <div class="h-40 w-full rounded-2xl overflow-hidden mb-6 relative">
+                            <img src="${item.image}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center transition-all">
+                                <button onclick="editMenuItem(${item.id})" class="bg-white/10 backdrop-blur-md p-3 rounded-full text-white hover:bg-white/30 transition-all">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <h4 class="text-white font-black text-lg mb-4 truncate">${item.name}</h4>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="bg-zinc-900 px-4 py-2 rounded-xl text-rose-500 font-black text-sm">$${item.price.toFixed(2)}</div>
+                                <span class="text-[10px] font-bold text-zinc-500 uppercase">${item.type}</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="restock(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-emerald-500 rounded-xl hover:bg-emerald-600 hover:text-white transition-all" title="Réapprovisionner">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                                </button>
+                                <button onclick="deleteMenuItem(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-rose-500 rounded-xl hover:bg-rose-600 hover:text-white transition-all" title="Supprimer">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // --- ACTIONS ---
+
+    function setCategory(cat) {
+        currentCategory = cat;
+        renderVisitorHome(document.getElementById('content-display'));
+    }
+
+    function searchItems(val) {
+        searchQuery = val;
+        if(currentTab === 'visitor-home') updateProductGrid();
+    }
+
+    function addToCart(id) {
+        const item = menuData.find(i => i.id === id);
+        if(item.stock <= 0) {
+            showToast('Rupture de stock', `${item.name} n'est plus disponible`, 'error');
+            return;
+        }
+        
+        cart.push({...item});
+        renderRightPanel();
+        updateMobileCartUI();
+        
+        // Petite animation de feedback
+        const btn = document.getElementById('cart-count-badge');
+        btn.classList.add('scale-125');
+        setTimeout(() => btn.classList.remove('scale-125'), 200);
+        
+        showToast('Ajouté au panier', `${item.name} a été ajouté à votre commande`, 'success');
+    }
+
+    function removeFromCart(idx) {
+        const item = cart[idx];
+        cart.splice(idx, 1);
+        renderRightPanel();
+        updateMobileCartUI();
+        showToast('Retiré du panier', `${item.name} a été retiré de votre commande`, 'info');
+    }
+
+    function finishOrder(id) {
+        const o = orders.find(x => x.id === id);
+        if(o) {
+            o.status = 'terminé';
+            showToast('Commande terminée', `La commande ${id} a été marquée comme terminée`, 'success');
+        }
+        navigate('admin-orders');
+        renderRightPanel();
+    }
+
+    function restock(id) {
+        const i = menuData.find(x => x.id === id);
+        if(i) {
+            i.stock = i.stockMax;
+            showToast('Réapprovisionné', `${i.name} a été réapprovisionné à ${i.stockMax} unités`, 'success');
+            if (currentTab === 'admin-inv') {
+                navigate('admin-inv');
+            } else if (currentTab === 'admin-menu') {
+                navigate('admin-menu');
+            }
+        }
+    }
+
+    function showRestockAllPopup() {
+        showPopup('Réapprovisionner tout', 'Voulez-vous réapprovisionner tous les produits à leur stock maximum ?', 'warning', 'Réapprovisionner', 'Annuler', () => {
+            menuData.forEach(item => {
+                item.stock = item.stockMax;
+            });
+            showToast('Stock mis à jour', 'Tous les produits ont été réapprovisionnés', 'success');
+            navigate('admin-inv');
+        });
+    }
+
+    function editMenuItem(id) {
+        const item = menuData.find(x => x.id === id);
+        showPopup('Modifier le produit', `Modifier "${item.name}"\n\nPrix actuel: $${item.price.toFixed(2)}\nStock actuel: ${item.stock}/${item.stockMax}\n\nCette fonctionnalité complète sera disponible dans la version 2.`, 'info', 'OK', 'Annuler', () => {
+            // In a real app, you would show a form. For demo, just show message
+            showToast('Fonctionnalité', 'Édition complète disponible en version 2', 'info');
+        });
+    }
+
+    function deleteMenuItem(id) {
+        const item = menuData.find(x => x.id === id);
+        showPopup('Supprimer le produit', `Êtes-vous sûr de vouloir supprimer "${item.name}" du menu ?\n\nCette action est irréversible.`, 'error', 'Supprimer', 'Annuler', () => {
+            const idx = menuData.findIndex(x => x.id === id);
+            menuData.splice(idx, 1);
+            showToast('Produit supprimé', `${item.name} a été retiré du menu`, 'success');
+            navigate('admin-menu');
+        });
+    }
+
+    function showCreateProductPopup() {
+        showPopup('Nouveau Produit', 'Créer un nouveau produit dans le menu.\n\nCette fonctionnalité complète sera disponible dans la version 2.', 'info', 'OK', 'Annuler', () => {
+            showToast('Fonctionnalité', 'Création de produit disponible en version 2', 'info');
+        });
+    }
+
+    function reorder(items) {
+        showPopup('Commander à nouveau', 'Voulez-vous ajouter ces articles à votre panier actuel ?', 'info', 'Ajouter au panier', 'Annuler', () => {
+            // Parse items string and add to cart
+            const itemNames = items.split(',').map(item => item.trim());
+            itemNames.forEach(itemName => {
+                const item = menuData.find(m => itemName.includes(m.name));
+                if (item && item.stock > 0) {
+                    cart.push({...item});
+                }
+            });
+            renderRightPanel();
+            updateMobileCartUI();
+            showToast('Articles ajoutés', 'Les articles ont été ajoutés à votre panier', 'success');
+        });
+    }
+
+    function showOrderDetails(orderId) {
+        const order = visitorOrders.find(o => o.id === orderId);
+        if (order) {
+            showPopup(`Détails de la commande ${orderId}`, 
+                     `Statut: ${order.status}\nHeure: ${order.time}\nTotal: $${order.total.toFixed(2)}\n\nArticles:\n${order.items.replace(/, /g, '\n')}`, 
+                     'info', 'Fermer', '', () => {});
+            document.getElementById('popup-confirm').innerText = 'Fermer';
+            document.getElementById('popup-cancel').classList.add('hidden');
+        }
+    }
+
+    function generateReport() {
+        showPopup('Générer Rapport', 'Voulez-vous générer un rapport détaillé des activités ?', 'info', 'Générer', 'Annuler', () => {
+            showToast('Rapport généré', 'Le rapport a été généré avec succès', 'success');
+        });
+    }
+
+    function confirmOrder() {
+        if(cart.length === 0) {
+            showToast('Panier vide', 'Votre panier est vide', 'error');
+            return;
+        }
+        
+        const total = cart.reduce((a, b) => a + b.price, 0);
+        
+        showPopup('Confirmer la commande', 
+                 `Vous êtes sur le point de passer commande pour $${total.toFixed(2)}.\n\n${cart.length} article(s) seront envoyés en cuisine.`, 
+                 'info', 'Confirmer', 'Annuler', () => {
+            // Simuler ajout aux commandes admin
+            const newId = "#OP-" + Math.floor(1000 + Math.random() * 9000);
+            const newOrder = {
+                id: newId,
+                customer: "Client Privilège",
+                items: cart.map(i => `${i.name} x1`).join(', '),
+                total: total,
+                status: 'en cours',
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+            };
+            
+            orders.unshift(newOrder);
+
+            // Ajouter à l'historique du visiteur
+            visitorOrders.unshift({...newOrder});
+
+            // Simuler déduction stock
+            cart.forEach(item => {
+                const m = menuData.find(x => x.id === item.id);
+                if(m && m.stock > 0) m.stock--;
+            });
+
+            showToast('Commande confirmée', `Votre commande ${newId} a été envoyée en cuisine !`, 'success');
+            cart = [];
+            renderRightPanel();
+            updateMobileCartUI();
+            if(window.innerWidth < 1024) toggleMobileCart();
+            
+            // Si on est sur la page des commandes, rafraîchir
+            if (currentTab === 'visitor-orders') {
+                navigate('visitor-orders');
+            }
+            
+            // Rafraîchir le panneau admin s'il est ouvert
+            if (currentUser === 'admin') {
+                renderRightPanel();
+            }
+        });
+    }
+
+    // --- PANEL RENDERERS ---
+
+    function renderRightPanel() {
+        const panel = document.getElementById('right-panel');
+        if(!panel) return;
+
+        if (currentUser === 'visitor') {
+            const total = cart.reduce((acc, curr) => acc + curr.price, 0);
+            panel.innerHTML = `
+                <div class="h-full flex flex-col">
+                    <h3 class="text-xl font-bold text-white mb-8 flex items-center">
+                        Mon Panier 
+                        <span class="ml-3 bg-rose-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black">${cart.length}</span>
+                    </h3>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+                        ${cart.length === 0 ? `
+                            <div class="text-center py-20">
+                                <div class="text-zinc-800 mb-4 inline-block"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+                                <p class="text-zinc-600 text-xs uppercase tracking-widest font-bold">Votre panier est vide</p>
+                            </div>
+                        ` : cart.map((item, idx) => `
+                            <div class="flex items-center space-x-4 bg-zinc-900/50 p-4 rounded-[1.5rem] border border-zinc-800 hover:border-zinc-700 transition-all group">
+                                <img src="${item.image}" class="w-12 h-12 rounded-xl object-cover">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-bold text-white truncate">${item.name}</p>
+                                    <p class="text-rose-500 font-black text-xs">$${item.price.toFixed(2)}</p>
+                                </div>
+                                <button onclick="removeFromCart(${idx})" class="text-zinc-700 hover:text-rose-500"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="pt-8 border-t border-zinc-800 mt-6">
+                        <div class="flex justify-between items-end mb-6">
+                            <span class="text-zinc-500 text-xs font-black uppercase">Total</span>
+                            <span class="text-3xl font-black text-white">$${total.toFixed(2)}</span>
+                        </div>
+                        <button onclick="confirmOrder()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-rose-900/20 transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" ${cart.length === 0 ? 'disabled' : ''}>
+                            CONFIRMER LA COMMANDE
+                        </button>
+                        <p class="text-center text-zinc-600 text-xs mt-4">
+                            ${visitorOrders.length} commande(s) dans votre historique
+                        </p>
+                    </div>
+                </div>
+            `;
+        } else {
+            const activeOrdersCount = orders.filter(o => o.status === 'en cours').length;
+            const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+            
+            panel.innerHTML = `
+                <div class="flex flex-col h-full">
+                    <h3 class="text-xl font-bold text-white mb-8">Tableau de Performance</h3>
+                    <div class="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                        <div class="bg-gradient-to-br from-rose-600 to-rose-700 p-8 rounded-[2.5rem] shadow-xl text-white">
+                            <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-80">Commandes Actives</p>
+                            <h4 class="text-5xl font-black">${activeOrdersCount}</h4>
+                        </div>
+                        
+                        <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2rem]">
+                            <h5 class="text-zinc-500 text-[10px] font-black uppercase mb-4 tracking-widest">Statistiques Rapides</h5>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-white">Revenu Total</span>
+                                    <span class="text-xs text-rose-500 font-black">$${totalRevenue.toFixed(2)}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-white">Produits en Stock</span>
+                                    <span class="text-xs text-rose-500 font-black">${menuData.length}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-white">Commandes Total</span>
+                                    <span class="text-xs text-rose-500 font-black">${orders.length}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2rem]">
+                            <h5 class="text-zinc-500 text-[10px] font-black uppercase mb-4 tracking-widest">Alertes Stock</h5>
+                            <div class="space-y-3">
+                                ${menuData.filter(item => item.stock < 10).map(item => `
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold text-white truncate">${item.name}</span>
+                                        <span class="text-xs text-rose-500 font-black">${item.stock} restant</span>
+                                    </div>
+                                `).join('')}
+                                ${menuData.filter(item => item.stock < 10).length === 0 ? 
+                                    '<p class="text-xs text-zinc-500 text-center">Aucune alerte stock</p>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // --- UI HELPERS ---
+
+    function toggleSidebar(show = null) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const isShowing = show !== null ? !show : sidebar.classList.contains('mobile-sidebar-show');
+        
+        if(!isShowing) {
+            sidebar.classList.add('mobile-sidebar-show');
+            sidebar.classList.remove('mobile-sidebar-hidden');
+            overlay.classList.remove('hidden');
+        } else {
+            sidebar.classList.remove('mobile-sidebar-show');
+            sidebar.classList.add('mobile-sidebar-hidden');
+            overlay.classList.add('hidden');
+        }
+    }
+
+    function toggleMobileCart() {
+        const drawer = document.getElementById('mobile-cart-drawer');
+        const isShowing = !drawer.classList.contains('translate-x-full');
+        if(!isShowing) {
+            drawer.classList.remove('translate-x-full');
+            updateMobileCartUI();
+        } else {
+            drawer.classList.add('translate-x-full');
+        }
+    }
+
+    function updateMobileCartUI() {
+        const count = document.getElementById('cart-count-badge');
+        const list = document.getElementById('mobile-cart-list');
+        const footer = document.getElementById('mobile-cart-footer');
+        
+        count.innerText = cart.length;
+
+        if (cart.length === 0) {
+            list.innerHTML = `<p class="text-center text-zinc-600 mt-20">Panier vide</p>`;
+            footer.innerHTML = "";
+        } else {
+            list.innerHTML = cart.map((item, idx) => `
+                <div class="flex items-center space-x-4 bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800">
+                    <img src="${item.image}" class="w-10 h-10 rounded-xl object-cover">
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-white">${item.name}</p>
+                        <p class="text-rose-500 text-xs">$${item.price.toFixed(2)}</p>
+                    </div>
+                    <button onclick="removeFromCart(${idx})" class="text-zinc-600"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                </div>
+            `).join('');
+
+            const total = cart.reduce((a, b) => a + b.price, 0);
+            footer.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-zinc-500 text-xs font-black uppercase">Total</span>
+                    <span class="text-2xl font-black text-white">$${total.toFixed(2)}</span>
+                </div>
+                <button onclick="confirmOrder()" class="w-full bg-rose-600 text-white font-black py-4 rounded-xl shadow-lg">COMMANDER</button>
+            `;
+        }
+    }
+
+    // --- INIT ---
+    window.addEventListener('resize', () => {
+        if(window.innerWidth >= 1024) toggleSidebar(false);
+    });
+
+</script>
+</body>
+</html>
