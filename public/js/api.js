@@ -6,7 +6,7 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     };
     const token = localStorage.getItem('token');
     if (token) {
-        headers['x-auth-token'] = token;
+        headers['Authorization'] = `Bearer ${token}`;
     }
 
     const config = {

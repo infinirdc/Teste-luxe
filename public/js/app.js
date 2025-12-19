@@ -402,7 +402,7 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="addToCart(${p.id})" class="w-full bg-zinc-900 hover:bg-rose-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center transition-all group-hover:shadow-lg group-hover:shadow-rose-600/20 ${p.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${p.stock === 0 ? 'disabled' : ''}>
+                    <button onclick="addToCart('${p.id}')" class="w-full bg-zinc-900 hover:bg-rose-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center transition-all group-hover:shadow-lg group-hover:shadow-rose-600/20 ${p.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${p.stock === 0 ? 'disabled' : ''}>
                         ${p.stock === 0 ? '<i class="fas fa-times-circle mr-2"></i> Rupture de stock' : `
                             <i class="fas fa-plus-circle mr-2"></i> Ajouter
                         `}
@@ -605,13 +605,13 @@
                                         </td>
                                         <td class="px-8 py-6 text-right">
                                             <div class="flex justify-end space-x-2">
-                                                <button onclick="showStockModal(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-blue-600 text-blue-500 hover:text-white rounded-xl transition-all" title="Gérer le stock">
+                                                <button onclick="showStockModal('${item.id}')" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-blue-600 text-blue-500 hover:text-white rounded-xl transition-all" title="Gérer le stock">
                                                     <i class="fas fa-boxes"></i>
                                                 </button>
-                                                <button onclick="editMenuItem(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-xl transition-all" title="Modifier">
+                                                <button onclick="editMenuItem('${item.id}')" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-emerald-600 text-emerald-500 hover:text-white rounded-xl transition-all" title="Modifier">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button onclick="restock(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-amber-600 text-amber-500 hover:text-white rounded-xl transition-all" title="Réapprovisionner">
+                                                <button onclick="restock('${item.id}')" class="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-amber-600 text-amber-500 hover:text-white rounded-xl transition-all" title="Réapprovisionner">
                                                     <i class="fas fa-sync-alt"></i>
                                                 </button>
                                             </div>
@@ -819,7 +819,7 @@
                             <div class="h-40 w-full rounded-2xl overflow-hidden mb-6 relative">
                                 <img src="${item.image}" class="w-full h-full object-cover">
                                 <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center transition-all">
-                                    <button onclick="editMenuItem(${item.id})" class="bg-white/10 backdrop-blur-md p-3 rounded-full text-white hover:bg-white/30 transition-all">
+                                    <button onclick="editMenuItem('${item.id}')" class="bg-white/10 backdrop-blur-md p-3 rounded-full text-white hover:bg-white/30 transition-all">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                 </div>
@@ -835,13 +835,13 @@
                                     <span class="text-[10px] font-bold text-zinc-500 uppercase">${item.type}</span>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <button onclick="showStockModal(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-blue-500 rounded-xl hover:bg-blue-600 hover:text-white transition-all" title="Gérer stock">
+                                    <button onclick="showStockModal('${item.id}')" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-blue-500 rounded-xl hover:bg-blue-600 hover:text-white transition-all" title="Gérer stock">
                                         <i class="fas fa-boxes"></i>
                                     </button>
-                                    <button onclick="editMenuItem(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-emerald-500 rounded-xl hover:bg-emerald-600 hover:text-white transition-all" title="Modifier">
+                                    <button onclick="editMenuItem('${item.id}')" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-emerald-500 rounded-xl hover:bg-emerald-600 hover:text-white transition-all" title="Modifier">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button onclick="deleteMenuItem(${item.id})" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-rose-500 rounded-xl hover:bg-rose-600 hover:text-white transition-all" title="Supprimer">
+                                    <button onclick="deleteMenuItem('${item.id}')" class="w-10 h-10 flex items-center justify-center bg-zinc-900 text-rose-500 rounded-xl hover:bg-rose-600 hover:text-white transition-all" title="Supprimer">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -964,7 +964,7 @@
         input.value = newValue;
     }
 
-    function saveStockChanges() {
+    async function saveStockChanges() {
         if (!currentStockProductId) return;
         
         const item = menuData.find(x => x.id === currentStockProductId);
@@ -982,9 +982,14 @@
         if (newStock > item.stockMax) {
             showPopup('Stock maximum dépassé', 
                      `Le stock maximum pour ${item.name} est de ${item.stockMax}. Voulez-vous augmenter le stock maximum à ${newStock}?`, 
-                     'warning', 'Augmenter', 'Annuler', () => {
+                     'warning', 'Augmenter', 'Annuler', async () => {
                 item.stockMax = newStock;
                 item.stock = newStock;
+                try {
+                    await apiCall(`/products/${item.id}`, 'PUT', { maxStock: newStock, stock: newStock });
+                } catch (err) {
+                    showToast('Erreur', err.message, 'error');
+                }
                 hideStockModal();
                 showToast('Stock mis à jour', `${item.name}: stock mis à ${newStock} unités`, 'success');
                 
@@ -996,6 +1001,11 @@
             item.stock = newStock;
             hideStockModal();
             showToast('Stock mis à jour', `${item.name}: stock ajusté à ${newStock} unités`, 'success');
+            try {
+                await apiCall(`/products/${item.id}/stock`, 'PUT', { stock: newStock });
+            } catch (err) {
+                showToast('Erreur', err.message, 'error');
+            }
             
             // Recharger la vue actuelle
             if (currentTab === 'admin-inv') navigate('admin-inv');
@@ -1038,13 +1048,16 @@
         showEditProductForm(id);
     }
 
-    function deleteMenuItem(id) {
+    async function deleteMenuItem(id) {
         const item = menuData.find(x => x.id === id);
         showPopup('Supprimer le produit', `Êtes-vous sûr de vouloir supprimer "${item.name}" du menu ?\n\nCette action est irréversible.`, 'error', 'Supprimer', 'Annuler', () => {
             const idx = menuData.findIndex(x => x.id === id);
             menuData.splice(idx, 1);
             showToast('Produit supprimé', `${item.name} a été retiré du menu`, 'success');
             navigate('admin-menu');
+            apiCall(`/products/${id}`, 'DELETE').then(() => {
+                fetchProducts();
+            }).catch(err => showToast('Erreur', err.message, 'error'));
         });
     }
 

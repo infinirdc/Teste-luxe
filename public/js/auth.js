@@ -66,7 +66,7 @@ function logout() {
 
 function quickFill(role) {
     document.getElementById('username').value = role;
-    document.getElementById('password').value = role === 'admin' ? '1234' : '';
+    document.getElementById('password').value = role === 'admin' ? 'password123' : '';
 }
 
 function showRegisterModal() {
