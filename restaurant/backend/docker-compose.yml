@@ -1,0 +1,45 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: opulence_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret
+      MONGO_INITDB_DATABASE: opulence_restaurant
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - opulence_network
+
+  backend:
+    build: .
+    container_name: opulence_backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://admin:secret@mongodb:27017/opulence_restaurant?authSource=admin
+      JWT_SECRET: your_super_secret_jwt_key
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    networks:
+      - opulence_network
+    volumes:
+      - ./uploads:/app/uploads
+      - /app/node_modules
+
+networks:
+  opulence_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
