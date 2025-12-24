@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "serveur.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/serveur.js"
+    }
+  ],
+  "env": {
+    "MONGODB_URI": "mongodb+srv://marume:Anikulapo0@infini.ywvovbm.mongodb.net/?appName=INFINI",
+    "JWT_SECRET": "votre_secret_jwt"
+  }
+}
