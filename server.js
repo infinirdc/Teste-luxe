@@ -1,3 +1,5 @@
+require('dotenv').config(); // Pour charger les variables d'environnement
+const jwt = require('jsonwebtoken'); // Pour JWT
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -11,7 +13,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configuration MongoDB Atlas
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marume:Anikulapo0@infini.ywvovbm.mongodb.net/?appName=INFINI';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://marume:Anikulapo0@infini.ywvovbm.mongodb.net/?appName=INFINI?retryWrites=true&w=m';
 
 // Connexion MongoDB
 mongoose.connect(MONGODB_URI, {
@@ -61,6 +63,7 @@ const Product = mongoose.model('Product', productSchema);
 const Order = mongoose.model('Order', orderSchema);
 
 // Routes d'authentification
+// Route d'inscription
 app.post('/api/auth/register', async (req, res) => {
     try {
         const { name, phone } = req.body;
@@ -75,13 +78,25 @@ app.post('/api/auth/register', async (req, res) => {
         const user = new User({ name, phone, role: 'visitor' });
         await user.save();
         
-        res.status(201).json({ message: 'Inscription réussie', user: { name, phone } });
+        // Générer un token JWT
+        const token = jwt.sign(
+            { userId: user._id, phone: user.phone, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
+        res.status(201).json({ 
+            message: 'Inscription réussie', 
+            token,
+            user: { name, phone, role: 'visitor' } 
+        });
     } catch (error) {
         console.error('Erreur inscription:', error);
         res.status(500).json({ message: 'Erreur serveur' });
     }
 });
 
+// Route de connexion
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { phone } = req.body;
@@ -92,8 +107,16 @@ app.post('/api/auth/login', async (req, res) => {
             return res.status(404).json({ message: 'Utilisateur non trouvé' });
         }
         
+        // Générer un token JWT
+        const token = jwt.sign(
+            { userId: user._id, phone: user.phone, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
         res.json({ 
             message: 'Connexion réussie', 
+            token,
             user: { 
                 name: user.name, 
                 phone: user.phone, 
@@ -102,6 +125,51 @@ app.post('/api/auth/login', async (req, res) => {
         });
     } catch (error) {
         console.error('Erreur connexion:', error);
+        res.status(500).json({ message: 'Erreur serveur' });
+    }
+});
+
+// Route de connexion admin
+app.post('/api/auth/admin/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // Vérifier les identifiants admin
+        if (username === (process.env.ADMIN_USERNAME || 'gt') && 
+            password === (process.env.ADMIN_PASSWORD || '55436')) {
+            
+            // Créer ou récupérer l'utilisateur admin
+            let adminUser = await User.findOne({ phone: 'admin' });
+            if (!adminUser) {
+                adminUser = new User({ 
+                    name: 'Administrateur', 
+                    phone: 'admin', 
+                    role: 'admin' 
+                });
+                await adminUser.save();
+            }
+            
+            // Générer un token JWT
+            const token = jwt.sign(
+                { userId: adminUser._id, phone: adminUser.phone, role: 'admin' },
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+            
+            return res.json({
+                message: 'Connexion admin réussie',
+                token,
+                user: {
+                    name: 'Administrateur',
+                    phone: 'admin',
+                    role: 'admin'
+                }
+            });
+        }
+        
+        res.status(401).json({ message: 'Identifiants administrateur incorrects' });
+    } catch (error) {
+        console.error('Erreur connexion admin:', error);
         res.status(500).json({ message: 'Erreur serveur' });
     }
 });
