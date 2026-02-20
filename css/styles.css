@@ -1,0 +1,413 @@
+/**
+ * Opulence Restaurant - Main Styles
+ * Centralized CSS for the application
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+    background-color: #0F0F11;
+    color: #E4E4E7;
+    overflow-x: hidden;
+    transition: background-color 0.3s ease;
+}
+
+/* Scroll Bar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #1a1a1d;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #27272A;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+}
+
+/* Glass Morphism */
+.glass {
+    background: rgba(26, 26, 29, 0.85);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.glass:hover {
+    background: rgba(26, 26, 29, 0.95);
+    border-color: rgba(225, 29, 72, 0.2);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes slideLeft {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-left {
+    animation: slideLeft 0.3s ease-out;
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Sidebar */
+.sidebar-item {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border-left: 4px solid transparent;
+    padding-left: 12px;
+}
+
+.sidebar-item:hover {
+    background: rgba(225, 29, 72, 0.1);
+    color: #E11D48;
+}
+
+.sidebar-item.active {
+    background: linear-gradient(90deg, rgba(225, 29, 72, 0.15) 0%, transparent 100%);
+    border-left-color: #E11D48;
+    color: #E11D48;
+    font-weight: 600;
+}
+
+/* Product Card */
+.product-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(225, 29, 72, 0.3);
+    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.1);
+}
+
+.product-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 1.5rem;
+    overflow: hidden;
+}
+
+.product-image:hover {
+    transform: scale(1.05);
+}
+
+/* Inventory Bar */
+.inventory-bar {
+    height: 6px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    background: #27272A;
+    overflow: hidden;
+}
+
+.inventory-bar.low {
+    background: linear-gradient(90deg, #EF4444 0%, #DC2626 100%);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
+
+.inventory-bar.medium {
+    background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+
+.inventory-bar.high {
+    background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Buttons */
+button {
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #BE123C 0%, #9D174D 100%);
+    box-shadow: 0 8px 16px rgba(225, 29, 72, 0.3);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #E4E4E7;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 12px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Forms */
+input, textarea, select {
+    background: rgba(26, 26, 29, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #E4E4E7;
+    padding: 10px 15px;
+    border-radius: 12px;
+    width: 100%;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #E11D48;
+    background: rgba(26, 26, 29, 0.95);
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+}
+
+input::placeholder {
+    color: #71717A;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Modals and Popups */
+.popup-overlay {
+    animation: fadeIn 0.2s ease-out backwards;
+}
+
+.popup-container {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+/* Tabs */
+.nav-btn {
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+}
+
+.nav-btn:hover {
+    color: #E11D48;
+}
+
+.nav-btn.active {
+    border-bottom-color: #E11D48;
+    color: #E11D48;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    body {
+        font-size: 14px;
+    }
+
+    .product-image {
+        height: 150px;
+    }
+
+    .glass {
+        border-radius: 1.5rem;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 250px;
+        z-index: 1000;
+        transition: transform 0.3s ease;
+        transform: translateX(-100%);
+    }
+
+    .sidebar.mobile-sidebar-show {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .mobile-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        cursor: pointer;
+    }
+
+    .mobile-overlay.hidden {
+        display: none;
+    }
+}
+
+/* Toast Notifications */
+#toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+}
+
+.toast {
+    background: rgba(26, 26, 29, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    animation: slideUp 0.3s ease-out;
+    min-width: 300px;
+}
+
+.toast.success {
+    border-left: 4px solid #10B981;
+}
+
+.toast.error {
+    border-left: 4px solid #EF4444;
+}
+
+.toast.info {
+    border-left: 4px solid #3B82F6;
+}
+
+.toast.warning {
+    border-left: 4px solid #F59E0B;
+}
+
+/* Loader */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(225, 29, 72, 0.2);
+    border-radius: 50%;
+    border-top-color: #E11D48;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Accessibility */
+:focus-visible {
+    outline: 2px solid #E11D48;
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: more) {
+    .glass {
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    button {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark Mode (default) */
+:root {
+    color-scheme: dark;
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+
+    .glass {
+        border: 1px solid #ccc;
+        background: white;
+    }
+}
