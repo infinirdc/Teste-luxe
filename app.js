@@ -58,6 +58,10 @@ async function createApp() {
     // Logging middleware
     app.use(requestLogger);
 
+    // Serve static files (HTML, CSS, JS, images)
+    app.use(express.static(__dirname));
+    app.use(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/, express.static(__dirname));
+
     // Health check endpoint (public, no logging)
     app.get('/health', (req, res) => {
         res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -68,6 +72,16 @@ async function createApp() {
     app.use('/api/products', productRoutes);
     app.use('/api/orders', orderRoutes);
     app.use('/api/stats', statsRoutes);
+
+    // Fallback to index.html for client-side routing (SPA)
+    app.get('*', (req, res) => {
+        // Only serve index.html for non-API paths
+        if (!req.path.startsWith('/api')) {
+            res.sendFile(__dirname + '/index.html');
+        } else {
+            res.status(404).json({ success: false, message: 'API endpoint not found' });
+        }
+    });
 
     // 404 handler (must be before error handler)
     app.use(notFoundHandler);
