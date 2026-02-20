@@ -42,11 +42,11 @@ function setupHelmet() {
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "'unsafe-inline'"],
-                styleSrc: ["'self'", "'unsafe-inline'"],
+                scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.tailwindcss.com', 'https://cdnjs.cloudflare.com'],
+                styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
                 imgSrc: ["'self'", 'data:', 'https:'],
-                fontSrc: ["'self'", 'data:', 'https:'],
-                connectSrc: ["'self'"],
+                fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
+                connectSrc: ["'self'", 'http://localhost:3000', 'https://*.vercel.app'],
             }
         },
         hsts: {
@@ -113,12 +113,11 @@ function securityHeaders(req, res, next) {
     // Disable X-Powered-By header
     res.removeHeader('X-Powered-By');
 
-    // Add security headers
+    // Add security headers (CSP is already handled by Helmet)
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
